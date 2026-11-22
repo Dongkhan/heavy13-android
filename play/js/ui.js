@@ -68,10 +68,13 @@
   }
 
   function submitCpus() {
+    var pending = [];
     game.players.forEach(function (p) {
       if (p.isHuman || game.submissions[p.id]) return;
-      var c = AI.chooseSubmit(game, p.id);
-      H.submit(game, p.id, c.card, c.chip);
+      pending.push({ id: p.id, choice: AI.chooseSubmit(game, p.id) });
+    });
+    pending.forEach(function (x) {
+      H.submit(game, x.id, x.choice.card, x.choice.chip);
     });
   }
 
@@ -302,12 +305,12 @@
     app.innerHTML =
       '<div class="panel rules"><h2 style="color:var(--ink);margin-bottom:10px">규칙</h2>' +
       "<p>7명, 14라운드. 각자 바위 카드 0~6과 빨강·초록·파랑 칩 2개, 레인보우 1개.</p>" +
-      "<p>매 라운드 카드 1장과 칩 1장을 숨겨 제출합니다. 칩은 받침대 색, 카드는 무게입니다.</p>" +
+      "<p>매 라운드 카드 1장과 칩 1장을 동시에 숨겨 제출합니다. 컴퓨터도 이번 라운드 남의 칩을 보지 않습니다.</p>" +
       "<p>레인보우가 먼저, 그다음 숫자가 큰 순. 동점이면 선 플레이어부터 시계 방향.</p>" +
       "<p>배치 때 한 번 패스할 수 있습니다. 패스한 사람은 맨 뒤에, 여러 명이면 패스한 역순.</p>" +
       "<p>받침대 합이 13 이상이 되면, 올리기 <b>전</b>에 있던 바위 개수만큼 벌점. 방금 올린 바위는 남습니다.</p>" +
       "<p>0은 합을 올리지 않고 개수만 늘립니다. 7라운드 뒤 패는 다시 받고 받침대는 유지됩니다.</p>" +
-      "<p>벌점이 적을수록 상위. 동점이면 더 최근에 벌점을 받은 쪽이 아래입니다.</p>" +
+      "<p>벌점이 적을수록 상위. 동점이면 더 최근에 벌점을 받은 쪽이 아래입니다. 같은 라운드면 더 늦게 터진 쪽이 아래입니다.</p>" +
       '</div><button class="btn" id="back-menu">돌아가기</button>';
   }
 

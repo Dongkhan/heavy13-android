@@ -9,10 +9,13 @@ function fail(msg) {
 }
 
 function playRoundCpu(state) {
+  var pending = [];
   state.players.forEach(function (p) {
     if (state.submissions[p.id]) return;
-    var choice = AI.chooseSubmit(state, p.id);
-    H.submit(state, p.id, choice.card, choice.chip);
+    pending.push({ id: p.id, choice: AI.chooseSubmit(state, p.id) });
+  });
+  pending.forEach(function (x) {
+    H.submit(state, x.id, x.choice.card, x.choice.chip);
   });
   H.beginReveal(state);
   H.beginPlace(state);
@@ -164,13 +167,17 @@ t("later penalty loses the tie", function () {
   s.players.forEach(function (p) {
     p.penalty = 20;
     p.lastPenaltyRound = 1;
+    p.lastPenaltySeq = 1;
   });
   s.players[0].penalty = 4;
   s.players[0].lastPenaltyRound = 10;
+  s.players[0].lastPenaltySeq = 10;
   s.players[1].penalty = 4;
   s.players[1].lastPenaltyRound = 12;
+  s.players[1].lastPenaltySeq = 12;
   s.players[2].penalty = 2;
   s.players[2].lastPenaltyRound = 8;
+  s.players[2].lastPenaltySeq = 8;
   var rank = H.ranking(s);
   assert.strictEqual(rank[0].id, 2);
   assert.strictEqual(rank[1].id, 0);
@@ -212,10 +219,12 @@ t("opening CPU chips are not all red", function () {
   var n = 0;
   for (var seed = 1; seed <= 40; seed++) {
     var s = H.createGame({ humanCount: 1, seed: seed });
+    var pending = [];
     s.players.forEach(function (p) {
       if (p.isHuman) return;
-      var choice = AI.chooseSubmit(s, p.id);
-      H.submit(s, p.id, choice.card, choice.chip);
+      pending.push(AI.chooseSubmit(s, p.id));
+    });
+    pending.forEach(function (choice) {
       n += 1;
       if (choice.chip === "R") red += 1;
       else if (choice.chip === "G") green += 1;
@@ -231,10 +240,13 @@ t("ui-like 1-human 14 rounds do not stall", function () {
   var s = H.createGame({ humanCount: 1, seed: 99 });
   var guard = 0;
   while (s.phase !== "gameover") {
+    var pending = [];
     s.players.forEach(function (p) {
       if (p.isHuman || s.submissions[p.id]) return;
-      var c = AI.chooseSubmit(s, p.id);
-      H.submit(s, p.id, c.card, c.chip);
+      pending.push({ id: p.id, choice: AI.chooseSubmit(s, p.id) });
+    });
+    pending.forEach(function (x) {
+      H.submit(s, x.id, x.choice.card, x.choice.chip);
     });
     var human = s.players[0];
     if (!s.submissions[human.id]) {
@@ -255,6 +267,51 @@ t("ui-like 1-human 14 rounds do not stall", function () {
     if (++guard > 20) fail("game stall");
   }
   assert.strictEqual(s.round, 14);
+});
+
+t("same-round later overflow loses the tie", function () {
+  var s = H.createGame({ humanCount: 1, seed: 1, dealer: 0 });
+  s.pedestals.R.cubes = [
+    { value: 6, owner: 2 },
+    { value: 6, owner: 3 },
+  ];
+  s.pedestals.G.cubes = [
+    { value: 6, owner: 4 },
+    { value: 6, owner: 5 },
+  ];
+  s.players.forEach(function (p, i) {
+    H.submit(s, i, 1, i === 0 ? "R" : i === 1 ? "G" : "B");
+  });
+  for (var i = 2; i < 7; i++) s.submissions[i].placed = true;
+  s.phase = "place";
+  s.placeQueue = [0, 1];
+  s.passQueue = [];
+  s.passActivated = false;
+  H.placeNow(s, 0, "R");
+  H.placeNow(s, 1, "G");
+  assert.strictEqual(s.players[0].penalty, 2);
+  assert.strictEqual(s.players[1].penalty, 2);
+  assert.ok(s.players[0].lastPenaltySeq < s.players[1].lastPenaltySeq);
+  var tied = H.ranking(s).filter(function (r) {
+    return r.penalty === 2;
+  });
+  assert.deepStrictEqual(
+    tied.map(function (r) {
+      return r.id;
+    }),
+    [0, 1]
+  );
+});
+
+t("cpu submit ignores this-round chips", function () {
+  var a = H.createGame({ humanCount: 1, seed: 11, dealer: 0 });
+  var b = H.createGame({ humanCount: 1, seed: 11, dealer: 0 });
+  for (var i = 2; i < 7; i++) {
+    H.submit(b, i, 0, "R");
+  }
+  var ca = AI.chooseSubmit(a, 1);
+  var cb = AI.chooseSubmit(b, 1);
+  assert.deepStrictEqual(ca, cb);
 });
 
 console.log("\n" + tests + " tests passed");

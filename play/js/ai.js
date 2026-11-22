@@ -59,11 +59,9 @@
     var colors = H.COLORS.filter(function (c) {
       return chips.indexOf(c) >= 0;
     });
-    var used = submittedCounts(state);
-
     function colorScore(c) {
       var prefer = (playerId + round) % 3 === H.COLORS.indexOf(c) ? 2.8 : 0;
-      return slack(state, c) - used[c] * 5.5 - cubeCount(state, c) * 0.5 + prefer + rand(state) * 2.4;
+      return slack(state, c) - cubeCount(state, c) * 0.5 + prefer + rand(state) * 2.4;
     }
 
     var ranked = colors

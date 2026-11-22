@@ -69,6 +69,7 @@
         chips: kit.chips.slice(),
         penalty: 0,
         lastPenaltyRound: -1,
+        lastPenaltySeq: -1,
       });
     }
     return {
@@ -77,7 +78,8 @@
       rngState: seed,
       humanCount: humanCount,
       round: 1,
-      dealer: 0,
+      dealer: opts.dealer != null ? opts.dealer : (seed >>> 0) % PLAYER_COUNT,
+      penaltyClock: 0,
       players: players,
       pedestals: emptyPedestals(),
       submissions: {},
@@ -191,8 +193,10 @@
     var overflowed = after >= LIMIT;
     if (overflowed) {
       var penalty = beforeCount;
+      state.penaltyClock = (state.penaltyClock || 0) + 1;
       state.players[playerId].penalty += penalty;
       state.players[playerId].lastPenaltyRound = state.round;
+      state.players[playerId].lastPenaltySeq = state.penaltyClock;
       state.lastPenaltyPlayer = playerId;
       ped.cubes = [cube];
       state.events.push({
@@ -287,11 +291,12 @@
         name: p.name,
         penalty: p.penalty,
         lastPenaltyRound: p.lastPenaltyRound,
+        lastPenaltySeq: p.lastPenaltySeq,
       };
     });
     rows.sort(function (a, b) {
       if (a.penalty !== b.penalty) return a.penalty - b.penalty;
-      return a.lastPenaltyRound - b.lastPenaltyRound;
+      return a.lastPenaltySeq - b.lastPenaltySeq;
     });
     return rows;
   }
@@ -318,7 +323,7 @@
       var ranked = ranking(state);
       state.winnerIds = ranked
         .filter(function (r) {
-          return r.penalty === ranked[0].penalty && r.lastPenaltyRound === ranked[0].lastPenaltyRound;
+          return r.penalty === ranked[0].penalty && r.lastPenaltySeq === ranked[0].lastPenaltySeq;
         })
         .map(function (r) {
           return r.id;
@@ -377,6 +382,7 @@
           isHuman: p.isHuman,
           penalty: p.penalty,
           lastPenaltyRound: p.lastPenaltyRound,
+          lastPenaltySeq: p.lastPenaltySeq,
           cards: p.cards.slice(),
           chips: p.chips.slice(),
           submitted: !!state.submissions[p.id],
