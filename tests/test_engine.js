@@ -204,4 +204,57 @@ t("two-human names", function () {
   assert.strictEqual(s.players[2].isHuman, false);
 });
 
+t("opening CPU chips are not all red", function () {
+  var red = 0;
+  var green = 0;
+  var blue = 0;
+  var rainbow = 0;
+  var n = 0;
+  for (var seed = 1; seed <= 40; seed++) {
+    var s = H.createGame({ humanCount: 1, seed: seed });
+    s.players.forEach(function (p) {
+      if (p.isHuman) return;
+      var choice = AI.chooseSubmit(s, p.id);
+      H.submit(s, p.id, choice.card, choice.chip);
+      n += 1;
+      if (choice.chip === "R") red += 1;
+      else if (choice.chip === "G") green += 1;
+      else if (choice.chip === "B") blue += 1;
+      else rainbow += 1;
+    });
+  }
+  assert.ok(red / n < 0.5, "red share " + red + "/" + n);
+  assert.ok(green > 0 && blue > 0, "missing green/blue " + green + " " + blue);
+});
+
+t("ui-like 1-human 14 rounds do not stall", function () {
+  var s = H.createGame({ humanCount: 1, seed: 99 });
+  var guard = 0;
+  while (s.phase !== "gameover") {
+    s.players.forEach(function (p) {
+      if (p.isHuman || s.submissions[p.id]) return;
+      var c = AI.chooseSubmit(s, p.id);
+      H.submit(s, p.id, c.card, c.chip);
+    });
+    var human = s.players[0];
+    if (!s.submissions[human.id]) {
+      var hc = AI.chooseSubmit(s, human.id);
+      H.submit(s, human.id, hc.card, hc.chip);
+    }
+    H.beginReveal(s);
+    H.beginPlace(s);
+    var inner = 0;
+    while (s.phase === "place") {
+      var id = H.currentActor(s);
+      if (id == null) fail("actor null round " + s.round);
+      var act = AI.choosePlace(s, id);
+      if (act.pass) H.passTurn(s, id);
+      else H.placeNow(s, id, act.color);
+      if (++inner > 40) fail("place stall round " + s.round);
+    }
+    if (++guard > 20) fail("game stall");
+  }
+  assert.strictEqual(s.round, 14);
+});
+
 console.log("\n" + tests + " tests passed");

@@ -17,7 +17,7 @@ BT = SDK / "build-tools/34.0.0"
 JDK = Path("C:/Program Files/Microsoft/jdk-17.0.20.8-hotspot/bin")
 JAR = SDK / "platforms/android-34/android.jar"
 KEY = Path("C:/Users/user/.android/debug.keystore")
-APK = ROOT / "heavy13-0.1.apk"
+APK = ROOT / "heavy13-0.2.apk"
 LOG = []
 PACKAGE = "kr.dongkhan.heavy13"
 
@@ -77,9 +77,9 @@ run(
         "--target-sdk-version",
         "34",
         "--version-code",
-        "1",
+        "2",
         "--version-name",
-        "0.1",
+        "0.2",
         "--debug-mode",
         "--auto-add-overlay",
         "-R",
@@ -143,7 +143,7 @@ run(
 verification = run([JDK / "java.exe", "-jar", BT / "lib/apksigner.jar", "verify", "--verbose", "--print-certs", APK])
 badging = run([BT / "aapt.exe", "dump", "badging", APK])
 assert f"name='{PACKAGE}'" in badging
-assert "versionCode='1'" in badging and "versionName='0.1'" in badging
+assert "versionCode='2'" in badging and "versionName='0.2'" in badging
 assets = []
 with zipfile.ZipFile(APK) as package:
     assert package.testzip() is None
@@ -160,8 +160,8 @@ report = {
     "bytes": APK.stat().st_size,
     "sha256": hashlib.sha256(APK.read_bytes()).hexdigest(),
     "application_id": PACKAGE,
-    "version_code": 1,
-    "version_name": "0.1",
+    "version_code": 2,
+    "version_name": "0.2",
     "packaged_assets_match_source": assets,
     "device_runtime_test": "not performed: no connected device or AVD required for this build",
     "steps": LOG,

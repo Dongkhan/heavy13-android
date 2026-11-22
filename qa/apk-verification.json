@@ -1,12 +1,12 @@
 {
-  "built_at": "2026-11-22T23:01:59.436994+09:00",
+  "built_at": "2026-11-22T23:12:32.612111+09:00",
   "method": "Android SDK aapt2 + javac + D8 + zipalign + apksigner",
-  "apk": "D:\\DK\\edu\\heavy13\\heavy13-0.1.apk",
+  "apk": "D:\\DK\\edu\\heavy13\\heavy13-0.2.apk",
   "bytes": 1557469,
-  "sha256": "952de2539bc16705e65e32f2571e23255436280ccd673be2b387f8a075e649b2",
+  "sha256": "e42a560a685a67533334390fb0019fab3bc58282cb94673ecbdcddb4a0a46f59",
   "application_id": "kr.dongkhan.heavy13",
-  "version_code": 1,
-  "version_name": "0.1",
+  "version_code": 2,
+  "version_name": "0.2",
   "packaged_assets_match_source": [
     "css/game.css",
     "fonts/Pretendard-Bold.woff2",
@@ -56,7 +56,7 @@
     {
       "tool": "aapt.exe",
       "exit_code": 0,
-      "output": "package: name='kr.dongkhan.heavy13' versionCode='1' versionName='0.1' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'\nsdkVersion:'24'\ntargetSdkVersion:'34'\napplication-label:'무거운 13'\napplication-icon-160:'res/mipmap-mdpi-v4/ic_launcher.png'\napplication: label='무거운 13' icon='res/mipmap-mdpi-v4/ic_launcher.png'\napplication-debuggable\nlaunchable-activity: name='kr.dongkhan.heavy13.MainActivity'  label='' icon=''\nfeature-group: label=''\n  uses-feature: name='android.hardware.faketouch'\n  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'\n  uses-feature: name='android.hardware.screen.portrait'\n  uses-implied-feature: name='android.hardware.screen.portrait' reason='one or more activities have specified a portrait orientation'\nmain\nsupports-screens: 'small' 'normal' 'large' 'xlarge'\nsupports-any-density: 'true'\nlocales: '--_--'\ndensities: '160'\n"
+      "output": "package: name='kr.dongkhan.heavy13' versionCode='2' versionName='0.2' platformBuildVersionName='14' platformBuildVersionCode='34' compileSdkVersion='34' compileSdkVersionCodename='14'\nsdkVersion:'24'\ntargetSdkVersion:'34'\napplication-label:'무거운 13'\napplication-icon-160:'res/mipmap-mdpi-v4/ic_launcher.png'\napplication: label='무거운 13' icon='res/mipmap-mdpi-v4/ic_launcher.png'\napplication-debuggable\nlaunchable-activity: name='kr.dongkhan.heavy13.MainActivity'  label='' icon=''\nfeature-group: label=''\n  uses-feature: name='android.hardware.faketouch'\n  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'\n  uses-feature: name='android.hardware.screen.portrait'\n  uses-implied-feature: name='android.hardware.screen.portrait' reason='one or more activities have specified a portrait orientation'\nmain\nsupports-screens: 'small' 'normal' 'large' 'xlarge'\nsupports-any-density: 'true'\nlocales: '--_--'\ndensities: '160'\n"
     }
   ]
 }

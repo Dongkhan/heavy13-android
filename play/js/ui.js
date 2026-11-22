@@ -10,6 +10,8 @@
   var handoffFor = null;
   var cpuTimer = null;
   var rainbowPick = false;
+  var submitHint = "";
+  var placeError = "";
 
   var KO = H.COLOR_KO;
   function pedName(c) {
@@ -37,6 +39,8 @@
     selectedChip = null;
     handoffFor = null;
     rainbowPick = false;
+    submitHint = "";
+    placeError = "";
     render();
   }
 
@@ -46,11 +50,19 @@
     selectedCard = null;
     selectedChip = null;
     rainbowPick = false;
+    submitHint = "";
+    placeError = "";
+    beginSubmitRound();
+  }
+
+  function beginSubmitRound() {
     submitCpus();
     var next = H.remainingHumans(game)[0];
-    if (humanCount === 2 && next) {
+    if (game.humanCount === 2 && next) {
       handoffFor = next.id;
       screen = "handoff";
+    } else {
+      screen = "game";
     }
     render();
   }
@@ -66,10 +78,17 @@
   function afterHumanSubmit() {
     selectedCard = null;
     selectedChip = null;
+    submitHint = "";
     var left = H.remainingHumans(game);
     if (left.length) {
       handoffFor = left[0].id;
       screen = "handoff";
+      render();
+      return;
+    }
+    submitCpus();
+    if (!H.allSubmitted(game)) {
+      placeError = "제출이 끝나지 않았습니다.";
       render();
       return;
     }
@@ -80,19 +99,47 @@
     queueCpuPlace();
   }
 
+  function afterPlaceAction() {
+    if (!game) return;
+    if (game.phase === "gameover") {
+      render();
+      return;
+    }
+    if (game.phase === "submit") {
+      selectedCard = null;
+      selectedChip = null;
+      rainbowPick = false;
+      submitHint = "";
+      beginSubmitRound();
+      return;
+    }
+    render();
+    queueCpuPlace();
+  }
+
   function queueCpuPlace() {
     clearTimer();
     if (!game || game.phase !== "place") return;
     var id = H.currentActor(game);
-    if (id == null) return;
+    if (id == null) {
+      placeError = "배치 차례가 비었습니다.";
+      render();
+      return;
+    }
     if (game.players[id].isHuman) return;
     cpuTimer = setTimeout(function () {
-      var act = AI.choosePlace(game, id);
-      if (act.pass) H.passTurn(game, id);
-      else H.placeNow(game, id, act.color);
-      render();
-      queueCpuPlace();
-    }, 520);
+      try {
+        var act = AI.choosePlace(game, id);
+        if (act.pass) H.passTurn(game, id);
+        else H.placeNow(game, id, act.color);
+        placeError = "";
+      } catch (err) {
+        placeError = String(err.message || err);
+        render();
+        return;
+      }
+      afterPlaceAction();
+    }, 380);
   }
 
   function chipsHtml(list, sel) {
@@ -205,7 +252,9 @@
     return (
       '<div class="panel"><div class="status">' +
       p.name +
-      " 제출</div><div style=\"margin:10px 0 6px;color:var(--muted);font-size:13px\">바위 카드</div><div class=\"hand\">" +
+      " 제출</div>" +
+      (submitHint ? '<div class="status" style="margin-top:8px">' + submitHint + "</div>" : "") +
+      '<div style="margin:10px 0 6px;color:var(--muted);font-size:13px">바위 카드</div><div class="hand">' +
       cardsHtml(p.cards, selectedCard) +
       '</div><div style="margin:12px 0 6px;color:var(--muted);font-size:13px">색깔 칩</div><div class="hand">' +
       chipsHtml(p.chips, selectedChip) +
@@ -305,10 +354,15 @@
     }
     var status = "";
     if (game.phase === "submit") status = (submitHuman != null ? game.players[submitHuman].name : "") + " 제출";
-    else if (game.phase === "place") status = game.players[actor].name + " 배치";
+    else if (game.phase === "place" && actor != null) status = game.players[actor].name + " 배치";
+    else if (game.phase === "place") status = "배치";
+    if (placeError) status = placeError;
     var controls = "";
     if (game.phase === "submit" && submitHuman != null) controls = humanHand(submitHuman);
     else if (game.phase === "place" && actor != null && game.players[actor].isHuman) controls = placeControls(actor);
+    else if (game.phase === "place" && actor != null) {
+      controls = '<div class="panel"><div class="status">컴퓨터가 올리는 중…</div></div>';
+    }
 
     app.innerHTML =
       '<div class="topbar"><h2>' +
@@ -383,12 +437,18 @@
     if (t.id === "do-submit") {
       var hum = H.remainingHumans(game)[0];
       if (!hum) return;
-      if (selectedCard == null || selectedChip == null) return;
+      if (selectedCard == null || selectedChip == null) {
+        submitHint = "카드와 칩을 하나씩 고른 뒤 제출하세요.";
+        render();
+        return;
+      }
       var card = hum.cards[selectedCard];
       var chip = hum.chips[selectedChip];
       try {
         H.submit(game, hum.id, card, chip);
       } catch (err) {
+        submitHint = String(err.message || err);
+        render();
         return;
       }
       afterHumanSubmit();
@@ -399,26 +459,32 @@
       try {
         H.passTurn(game, id);
       } catch (err) {
+        placeError = String(err.message || err);
+        render();
         return;
       }
       rainbowPick = false;
-      render();
-      queueCpuPlace();
+      afterPlaceAction();
       return;
     }
     if (t.id === "do-place") {
       var pid = H.currentActor(game);
       var sub = game.submissions[pid];
       var color = sub.chip === "W" ? rainbowPick || sub.chosenColor : sub.chip;
-      if (sub.chip === "W" && !color) return;
+      if (sub.chip === "W" && !color) {
+        placeError = "레인보우는 받침대를 먼저 고르세요.";
+        render();
+        return;
+      }
       try {
         H.placeNow(game, pid, color);
       } catch (err) {
+        placeError = String(err.message || err);
+        render();
         return;
       }
       rainbowPick = false;
-      render();
-      queueCpuPlace();
+      afterPlaceAction();
     }
   });
 
